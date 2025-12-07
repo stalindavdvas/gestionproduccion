@@ -1,0 +1,30 @@
+# --- Archivos de Sistema y IDEs ---
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# --- Python / Backend ---
+__pycache__/
+*.py[cod]
+*$py.class
+backend/venv/
+backend/.env
+backend/.pytest_cache/
+
+# --- Node / Frontend ---
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# --- Credenciales y Secretos (¡MUY IMPORTANTE!) ---
+backend/credentials/google_secret.json
+.env
+google_secret.json
+credentials/
+
+# --- Docker ---
+postgres_data/

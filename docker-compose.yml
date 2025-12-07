@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  # 1. Base de Datos
+  db:
+    image: postgres:16
+    container_name: tech_db
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin_password
+      POSTGRES_DB: productivity_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # 2. Backend (API Python)
+  backend:
+    build: ./backend
+    container_name: tech_backend
+    volumes:
+      - ./backend:/app # Esto permite que si editas código en Windows, se actualice en Docker
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://admin:admin_password@db:5432/productivity_db
+    depends_on:
+      - db
+
+  # 3. Frontend (React)
+  frontend:
+    build: ./frontend
+    container_name: tech_frontend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules # Evita borrar los módulos de linux con los de windows
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
