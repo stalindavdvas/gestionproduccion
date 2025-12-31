@@ -1,17 +1,13 @@
 @import "tailwindcss";
 
 @theme {
-  /* Definimos tus colores corporativos */
   --color-primary: #2563EB;
   --color-secondary: #64748B;
   --color-dark: #0F172A;
-  
-  /* Puedes añadir fuentes si usas Google Fonts más adelante */
   --font-sans: 'Inter', system-ui, sans-serif;
 }
 
-/* Estilos base globales */
 body {
-  background-color: #F8FAFC; /* Slate-50 */
+  background-color: #F8FAFC;
   font-family: var(--font-sans);
 }

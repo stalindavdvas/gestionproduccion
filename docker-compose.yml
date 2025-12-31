@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # 1. Base de Datos
+  # Base de Datos
   db:
     image: postgres:16
     container_name: tech_db
@@ -15,26 +15,30 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  # 2. Backend (API Python)
+  # Backend
   backend:
     build: ./backend
     container_name: tech_backend
     volumes:
-      - ./backend:/app # Esto permite que si editas código en Windows, se actualice en Docker
+      - ./backend:/app
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql://admin:admin_password@db:5432/productivity_db
+      DB_USER: admin
+      DB_PASSWORD: admin_password
+      DB_HOST: db        # Importante: Nombre del servicio de arriba
+      DB_NAME: productivity_db
+      GOOGLE_CREDENTIALS_FILE: /app/credentials/google_secret.json
     depends_on:
       - db
 
-  # 3. Frontend (React)
+  # Frontend (Lo dejaremos listo, aunque ahora nos enfocamos en backend)
   frontend:
     build: ./frontend
     container_name: tech_frontend
     volumes:
       - ./frontend:/app
-      - /app/node_modules # Evita borrar los módulos de linux con los de windows
+      - /app/node_modules
     ports:
       - "5173:5173"
     depends_on:
