@@ -1,26 +1,6 @@
-import React, { useState } from 'react';
-import { LayoutDashboard, MessageSquareText, FileText, Menu, Settings, LogOut, Database,Users } from 'lucide-react';
-
-interface SidebarItemProps {
-  icon: React.ElementType; // ✅ CORRECTO: Usamos el tipo nativo de React
-  text: string;
-  active?: boolean;
-  onClick?: () => void;
-}
-
-const SidebarItem = ({ icon: Icon, text, active, onClick }: SidebarItemProps) => (
-  <button
-    onClick={onClick}
-    className={`flex items-center w-full gap-3 px-4 py-3 rounded-xl transition-all duration-200 group cursor-pointer
-      ${active 
-        ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' 
-        : 'text-slate-500 hover:bg-white hover:text-blue-600 hover:shadow-md'
-      }`}
-  >
-    <Icon size={20} />
-    <span className="font-medium">{text}</span>
-  </button>
-);
+import React from 'react';
+import { Home, Users, BarChart2, MessageSquare, Database, LogOut, FileText, Map } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -29,84 +9,63 @@ interface LayoutProps {
 }
 
 export default function Layout({ children, activeTab, onTabChange }: LayoutProps) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const isAdmin = user?.role === 'admin';
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden">
-
-      {isSidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/20 z-20 lg:hidden"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
-
-      <aside className={`
-        fixed lg:static inset-y-0 left-0 z-30 w-64 bg-slate-50 border-r border-slate-200 
-        transform transition-transform duration-300 ease-in-out p-5 flex flex-col
-        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-      `}>
-        <div className="flex items-center gap-2 px-2 mb-10">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-blue-500/20 shadow-lg">
-            <Database className="text-white" size={18} />
-          </div>
-          <span className="text-xl font-bold text-slate-800">TechTracker</span>
+    <div className="flex h-screen bg-slate-50">
+      {/* Sidebar */}
+      <aside className="w-64 bg-white border-r border-slate-200 flex flex-col">
+        <div className="p-6">
+          <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            TechTracker
+          </h1>
+          <p className="text-xs text-slate-500 mt-1">Rol: {isAdmin ? 'Administrador' : 'Jefe Mantenimiento'}</p>
         </div>
 
-        <nav className="flex-1 space-y-2">
-          <SidebarItem
-            icon={LayoutDashboard}
-            text="Dashboard"
-            active={activeTab === 'dashboard'}
-            onClick={() => onTabChange('dashboard')}
-          />
-          <SidebarItem
-            icon={MessageSquareText}
-            text="Asistente IA"
-            active={activeTab === 'chat'}
-            onClick={() => onTabChange('chat')}
-          />
-          <SidebarItem
-  icon={Users} // Icono nuevo
-  text="Clientes"
-  active={activeTab === 'clientes'}
-  onClick={() => onTabChange('clientes')}
-/>
-          <SidebarItem
-            icon={FileText}
-            text="Reportes"
-            active={activeTab === 'reports'}
-            onClick={() => onTabChange('reports')}
-          />
+        <nav className="flex-1 px-3 space-y-1">
+          <SidebarItem icon={Home} text="Dashboard" active={activeTab === 'dashboard'} onClick={() => onTabChange('dashboard')} />
+          <SidebarItem icon={BarChart2} text="Analítica" active={activeTab === 'analytics'} onClick={() => onTabChange('analytics')} />
+          <SidebarItem icon={MessageSquare} text="Asistente IA" active={activeTab === 'chat'} onClick={() => onTabChange('chat')} />
+
+          {/* SECCIONES SOLO ADMIN */}
+          {isAdmin && (
+            <>
+              <div className="pt-4 pb-2 px-3 text-xs font-bold text-slate-400 uppercase">Administración</div>
+              <SidebarItem icon={Users} text="Clientes" active={activeTab === 'clients'} onClick={() => onTabChange('clients')} />
+              <SidebarItem icon={FileText} text="Órdenes Taller" active={activeTab === 'orders'} onClick={() => onTabChange('orders')} />
+              <SidebarItem icon={Map} text="Visitas Campo" active={activeTab === 'field'} onClick={() => onTabChange('field')} />
+              <SidebarItem icon={Database} text="Configuración ETL" active={activeTab === 'etl'} onClick={() => onTabChange('etl')} />
+            </>
+          )}
         </nav>
 
-        <div className="pt-6 border-t border-slate-200 space-y-2">
-          {/* BOTÓN NUEVO DE CONFIGURACIÓN */}
-          <SidebarItem
-            icon={Settings}
-            text="Configuración ETL"
-            active={activeTab === 'config'}
-            onClick={() => onTabChange('config')}
-          />
-          <SidebarItem icon={LogOut} text="Cerrar Sesión" />
+        <div className="p-4 border-t border-slate-100">
+          <button onClick={logout} className="flex items-center gap-3 px-3 py-2 w-full text-slate-600 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors text-sm font-medium">
+            <LogOut size={20} />
+            Cerrar Sesión
+          </button>
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-16 flex items-center justify-between px-6 bg-white border-b border-slate-200 lg:hidden shrink-0">
-          <button onClick={() => setIsSidebarOpen(true)} className="text-slate-500">
-            <Menu size={24} />
-          </button>
-          <span className="font-bold text-slate-700">TechTracker</span>
-          <div className="w-6" />
-        </header>
-
-        <main className="flex-1 overflow-y-auto p-4 lg:p-8 bg-slate-50/50">
-          <div className="max-w-7xl mx-auto h-full">
-            {children}
-          </div>
-        </main>
-      </div>
+      {/* Main Content */}
+      <main className="flex-1 overflow-auto p-8">
+        {children}
+      </main>
     </div>
+  );
+}
+
+function SidebarItem({ icon: Icon, text, active, onClick }: any) {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+        active ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50'
+      }`}
+    >
+      <Icon size={20} />
+      {text}
+    </button>
   );
 }

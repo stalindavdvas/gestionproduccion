@@ -2,15 +2,27 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
-// https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(),tailwindcss(),],
+  plugins: [react(), tailwindcss()],
   server: {
-    host: true,      // Necesario para Docker
-    strictPort: true,
+    host: true,
     port: 5173,
+    strictPort: true,
+
+    // 👇 Permite acceder desde ngrok
+    allowedHosts: true,
+
+    // 👇 PROXY para FastAPI (CLAVE)
+    proxy: {
+      '/api': {
+        target: 'http://backend:8000', // nombre del servicio docker
+        changeOrigin: true,
+        secure: false
+      }
+    },
+
     watch: {
-      usePolling: true // Necesario para que funcione el hot-reload en Windows
+      usePolling: true
     }
- }
+  }
 })

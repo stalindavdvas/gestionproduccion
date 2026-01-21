@@ -1,68 +1,90 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Union
 from datetime import date, datetime
 
 
-# --- CLIENTES ---
-class ClienteBase(BaseModel):
-    # Lo hacemos opcional por seguridad, aunque idealmente debería tener ID
-    id_cliente_appsheet: Optional[str] = None
-    nombre_fiscal: Optional[str] = None
-    ruc: Optional[str] = None
-    ciudad: Optional[str] = None
-    industria: Optional[str] = None
-    asesor_responsable: Optional[str] = None
+# --- BASES ---
+class TecnicoBase(BaseModel):
+    id: int
+    nombre_completo: str
 
-
-class ClienteCreate(ClienteBase):
-    pass
-
-
-class ClienteResponse(ClienteBase):
     class Config:
         from_attributes = True
 
 
-# --- TRABAJOS ---
-class TrabajoBase(BaseModel):
-    # AQUÍ ESTABA EL ERROR: Antes decía "id_appsheet: str" (Obligatorio)
-    # Lo cambiamos a Optional[str] = None para que no falle si viene vacío
-    id_appsheet: Optional[str] = None
+class IndustriaBase(BaseModel):
+    id: int
+    nombre: str
 
-    fecha_ingreso: Optional[datetime] = None
-    tipo_ingreso: Optional[str] = None
+    class Config:
+        from_attributes = True
 
-    # Orden
-    no_orden_taller: Optional[str] = None
-    no_orden_campo: Optional[str] = None
 
-    # Relacion
-    cliente_id: Optional[str] = None
+class TipoServicioBase(BaseModel):
+    id: int
+    nombre: str
 
-    # Equipo
+    class Config:
+        from_attributes = True
+
+
+class EquipoBase(BaseModel):
+    id: int
+    serie: Optional[str] = None
     marca: Optional[str] = None
     modelo: Optional[str] = None
-    serie: Optional[str] = None
-    servicio: Optional[str] = None
+    tipo_equipo: Optional[str] = None
 
-    # Estado y Técnico
+    class Config:
+        from_attributes = True
+
+
+# --- CLIENTES ---
+class ClienteResponse(BaseModel):
+    id_cliente_appsheet: str
+    nombre_fiscal: Optional[str] = None
+    ruc: Optional[str] = None
+    ciudad: Optional[str] = None
+    direccion: Optional[str] = None
+    telefono: Optional[str] = None
+    contacto: Optional[str] = None
+    # Relación anidada
+    industria_rel: Optional[IndustriaBase] = None
+
+    class Config:
+        from_attributes = True
+
+
+# --- ORDENES DE TRABAJO (TALLER/INGRESOS) ---
+class OrdenTrabajoResponse(BaseModel):
+    id_appsheet: str
+    fecha_ingreso: Optional[date] = None
+    no_orden_taller: Optional[str] = None
+    no_orden_campo: Optional[str] = None
     estado: Optional[str] = None
-    tecnico_ejecucion: Optional[str] = None
-    fecha_entrega: Optional[date] = None
-
-
-class TrabajoCreate(TrabajoBase):
-    pass
-
-
-class TrabajoResponse(TrabajoBase):
-    id: int
+    servicio_rel: Optional[TipoServicioBase] = None
+    tecnico_rel: Optional[TecnicoBase] = None
+    equipo_rel: Optional[EquipoBase] = None
     cliente_rel: Optional[ClienteResponse] = None
+    observaciones: Optional[str] = None
 
-    @property
-    def numero_orden_final(self):
-        # Lógica para mostrar un solo número de orden limpio
-        return self.no_orden_taller or self.no_orden_campo or "S/N"
+    class Config:
+        from_attributes = True
+
+
+# --- VISITAS DE CAMPO ---
+class VisitaCampoResponse(BaseModel):
+    id_campo_appsheet: str
+    codigo: Optional[str] = None
+    ubicacion: Optional[str] = None
+    estado: Optional[str] = None
+    ultima_fecha: Optional[date] = None
+    enlace_informe: Optional[str] = None
+
+    # Relaciones
+    tecnico1_rel: Optional[TecnicoBase] = None
+    tecnico2_rel: Optional[TecnicoBase] = None
+    equipo_rel: Optional[EquipoBase] = None
 
     class Config:
         from_attributes = True

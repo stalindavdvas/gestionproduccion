@@ -1,137 +1,135 @@
 import { useState } from 'react';
-import { Cloud, Database, RefreshCw, CheckCircle, Server, ArrowRight, Play, AlertTriangle } from 'lucide-react';
+import { Database, RefreshCw, Map, CheckCircle, AlertCircle, Play } from 'lucide-react';
 import { api } from '../services/api';
 
-export default function ConfigPage() {
-    const [status, setStatus] = useState<'idle' | 'syncing' | 'completed' | 'error'>('idle');
-    const [step, setStep] = useState(0); // 0: Idle, 1: Clientes, 2: Ingresos, 3: Fin
-    const [log, setLog] = useState<string[]>([]);
+export default function Config() {
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
-    const addLog = (msg: string) => setLog(prev => [...prev, `[${new Date().toLocaleTimeString()}] ${msg}`]);
+  const handleSync = async (type: 'clientes' | 'ingresos' | 'campo') => {
+    setLoading(true);
+    setMessage(null);
+    try {
+      let response;
+      if (type === 'clientes') response = await api.syncClientes();
+      if (type === 'ingresos') response = await api.syncIngresos();
+      if (type === 'campo') response = await api.syncCampo();
 
-    const startETL = async () => {
-        setStatus('syncing');
-        setStep(1);
-        setLog([]);
-        addLog("Iniciando proceso ETL...");
+      setMessage({
+        type: 'success',
+        text: response.mensaje || `Sincronización de ${type} completada.`
+      });
+    } catch (error) {
+      console.error(error);
+      setMessage({ type: 'error', text: 'Error al conectar con el servidor.' });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        try {
-            // PASO 1: CLIENTES
-            addLog("📥 Extrayendo Clientes desde Google Sheets...");
-            await api.syncClientes(); // Espera a que termine el backend
-            addLog("✅ Clientes sincronizados en PostgreSQL.");
+  return (
+    <div className="space-y-6 animate-in fade-in duration-500">
 
-            // PASO 2: TRABAJOS (INGRESOS)
-            setStep(2);
-            addLog("📥 Extrayendo Órdenes de Trabajo...");
-            await api.syncIngresos();
-            addLog("✅ Órdenes sincronizadas correctamente.");
+      {/* Header */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+          <Database className="text-blue-600" />
+          Configuración ETL
+        </h1>
+        <p className="text-slate-500 text-sm mt-1">
+          Administra la sincronización manual con Google Sheets.
+        </p>
+      </div>
 
-            // FIN
-            setStep(3);
-            setStatus('completed');
-            addLog("🎉 Proceso ETL completado con éxito.");
-
-        } catch (error) {
-            console.error(error);
-            setStatus('error');
-            addLog("❌ Error durante la sincronización. Revisa la consola o el backend.");
-        }
-    };
-
-    return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-800">Configuración del Sistema</h1>
-                    <p className="text-slate-500">Gestión de datos y sincronización ETL</p>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
-                {/* TARJETA DE CONTROL ETL */}
-                <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
-                    <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                        <RefreshCw className={status === 'syncing' ? 'animate-spin text-blue-600' : ''} size={20} />
-                        Sincronización de Datos
-                    </h2>
-
-                    <p className="text-slate-600 mb-8 text-sm leading-relaxed">
-                        Este proceso descarga los datos más recientes desde <b>Google Sheets</b> (Nube),
-                        normaliza la información y actualiza la base de datos <b>PostgreSQL</b> local.
-                    </p>
-
-                    {/* Diagrama Animado */}
-                    <div className="flex items-center justify-between px-4 mb-10 relative">
-                        {/* Línea de conexión de fondo */}
-                        <div className="absolute top-1/2 left-0 w-full h-1 bg-slate-100 -z-0"></div>
-                        <div
-                            className={`absolute top-1/2 left-0 h-1 bg-blue-500 transition-all duration-1000 -z-0`}
-                            style={{ width: step === 0 ? '0%' : step === 1 ? '50%' : '100%' }}
-                        />
-
-                        {/* Paso 1: Nube */}
-                        <div className={`relative z-10 flex flex-col items-center gap-2 transition-all duration-500 ${step >= 1 ? 'scale-110' : 'opacity-50'}`}>
-                            <div className={`w-14 h-14 rounded-full flex items-center justify-center border-4 ${step >= 1 ? 'bg-white border-blue-500 text-blue-600' : 'bg-slate-50 border-slate-200 text-slate-400'}`}>
-                                <Cloud size={24} />
-                            </div>
-                            <span className="text-xs font-bold text-slate-600">Google Sheets</span>
-                        </div>
-
-                        {/* Flecha Animada */}
-                        <div className="z-10 bg-white p-1 rounded-full">
-                            <ArrowRight size={20} className={status === 'syncing' ? 'text-blue-500 animate-pulse' : 'text-slate-300'} />
-                        </div>
-
-                        {/* Paso 2: Base de Datos */}
-                        <div className={`relative z-10 flex flex-col items-center gap-2 transition-all duration-500 ${step >= 2 ? 'scale-110' : 'opacity-50'}`}>
-                            <div className={`w-14 h-14 rounded-full flex items-center justify-center border-4 ${step >= 2 ? 'bg-white border-emerald-500 text-emerald-600' : 'bg-slate-50 border-slate-200 text-slate-400'}`}>
-                                <Database size={24} />
-                            </div>
-                            <span className="text-xs font-bold text-slate-600">PostgreSQL</span>
-                        </div>
-                    </div>
-
-                    {/* Botón de Acción */}
-                    <div className="flex justify-center">
-                        {status === 'idle' || status === 'completed' || status === 'error' ? (
-                            <button
-                                onClick={startETL}
-                                className="flex items-center gap-2 px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 transition-all active:scale-95"
-                            >
-                                <Play size={20} fill="currentColor" />
-                                Iniciar Sincronización Manual
-                            </button>
-                        ) : (
-                            <div className="flex items-center gap-3 text-blue-600 font-bold bg-blue-50 px-6 py-3 rounded-xl">
-                                <RefreshCw className="animate-spin" size={20} />
-                                Procesando datos...
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* CONSOLA DE LOGS */}
-                <div className="bg-slate-900 p-6 rounded-2xl shadow-inner font-mono text-sm overflow-hidden flex flex-col">
-                    <div className="flex items-center justify-between mb-4 border-b border-slate-700 pb-2">
-                        <span className="text-slate-400 flex items-center gap-2">
-                            <Server size={16} /> System Logs
-                        </span>
-                        {status === 'completed' && <span className="text-emerald-400 flex items-center gap-1"><CheckCircle size={14}/> Listo</span>}
-                        {status === 'error' && <span className="text-red-400 flex items-center gap-1"><AlertTriangle size={14}/> Fallo</span>}
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto space-y-2 max-h-[300px] text-slate-300">
-                        {log.length === 0 && <p className="text-slate-600 italic">Esperando inicio del proceso...</p>}
-                        {log.map((line, idx) => (
-                            <p key={idx} className="border-l-2 border-blue-500 pl-2 animate-pulse-once">
-                                {line}
-                            </p>
-                        ))}
-                    </div>
-                </div>
-            </div>
+      {/* Mensajes de Estado */}
+      {message && (
+        <div className={`p-4 rounded-xl border flex items-center gap-3 ${
+          message.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-red-50 border-red-200 text-red-700'
+        }`}>
+          {message.type === 'success' ? <CheckCircle size={20}/> : <AlertCircle size={20}/>}
+          <span className="font-medium">{message.text}</span>
         </div>
-    );
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        {/* TARJETA 1: CLIENTES */}
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="p-3 bg-blue-100 text-blue-600 rounded-xl">
+              <Database size={24} />
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-700">1. Clientes</h3>
+              <p className="text-xs text-slate-500">Industrias y Contactos</p>
+            </div>
+          </div>
+          <p className="text-sm text-slate-600 mb-6 min-h-[40px]">
+            Sincroniza la base maestra de clientes. Ejecutar esto primero para evitar errores de relación.
+          </p>
+          <button
+            onClick={() => handleSync('clientes')}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-100 text-slate-700 font-medium rounded-xl hover:bg-slate-200 transition-colors disabled:opacity-50"
+          >
+            {loading ? <RefreshCw className="animate-spin" size={18}/> : <Play size={18}/>}
+            Sincronizar Clientes
+          </button>
+        </div>
+
+        {/* TARJETA 2: TALLER (INGRESOS) */}
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="p-3 bg-purple-100 text-purple-600 rounded-xl">
+              <RefreshCw size={24} />
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-700">2. Ingresos Taller</h3>
+              <p className="text-xs text-slate-500">Órdenes de Trabajo</p>
+            </div>
+          </div>
+          <p className="text-sm text-slate-600 mb-6 min-h-[40px]">
+            Importa órdenes de taller, equipos y asigna técnicos automáticamente.
+          </p>
+          <button
+            onClick={() => handleSync('ingresos')}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-100 text-slate-700 font-medium rounded-xl hover:bg-slate-200 transition-colors disabled:opacity-50"
+          >
+            {loading ? <RefreshCw className="animate-spin" size={18}/> : <Play size={18}/>}
+            Sincronizar Taller
+          </button>
+        </div>
+
+        {/* TARJETA 3: CAMPO (NUEVO) */}
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="p-3 bg-emerald-100 text-emerald-600 rounded-xl">
+              <Map size={24} />
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-700">3. Visitas Campo</h3>
+              <p className="text-xs text-slate-500">Trabajos en Sitio</p>
+            </div>
+          </div>
+          <p className="text-sm text-slate-600 mb-6 min-h-[40px]">
+            Importa reportes de visitas técnicas realizadas en las instalaciones del cliente.
+          </p>
+          <button
+            onClick={() => handleSync('campo')}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-100 text-slate-700 font-medium rounded-xl hover:bg-slate-200 transition-colors disabled:opacity-50"
+          >
+            {loading ? <RefreshCw className="animate-spin" size={18}/> : <Play size={18}/>}
+            Sincronizar Campo
+          </button>
+        </div>
+
+      </div>
+
+      <div className="mt-8 p-4 bg-slate-50 rounded-xl border border-slate-200 text-sm text-slate-500 text-center">
+        Nota: El proceso de sincronización puede tardar unos segundos. Por favor no cierres esta ventana.
+      </div>
+    </div>
+  );
 }

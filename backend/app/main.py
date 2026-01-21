@@ -1,13 +1,11 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
-from typing import List
 
-from .database import engine, get_db
-from . import models, schemas
-from .routers import sync
+from .database import engine
+from . import models
+from .routers import sync, trabajos, chat, analytics, auth   #IMPORTAMOS LOS ROUTERS
 
-# 1. Crear tablas (Si no existen)
+# 1️⃣ Crear tablas (solo en desarrollo)
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -15,33 +13,27 @@ app = FastAPI(
     version="2.0.0"
 )
 
-# 2. CONFIGURACIÓN CORS (CRÍTICO)
-# Esto permite que el puerto 5173 (React) hable con el 8000 (Python)
+# 2️⃣ CONFIGURACIÓN CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # En desarrollo permitimos todo
+    allow_origins=["*"],        # En producción: dominios específicos
     allow_credentials=True,
-    allow_methods=["*"],  # Permitir GET, POST, PUT, DELETE
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# 3. Incluir Rutas
+# 3️⃣ RUTAS
 app.include_router(sync.router)
+app.include_router(trabajos.router)
+app.include_router(chat.router)
+app.include_router(analytics.router)
+app.include_router(auth.router)
 
+# 4️⃣ HEALTH CHECK
 @app.get("/")
 def read_root():
-    return {"status": "online", "version": "2.0.0"}
-
-# Endpoint para listar trabajos
-@app.get("/trabajos", response_model=List[schemas.TrabajoResponse])
-def listar_trabajos(skip: int = 0, limit: int = 5000, db: Session = Depends(get_db)):
-    # Usamos joinedload para optimizar la carga del cliente si fuera necesario,
-    # pero por defecto SQLAlchemy lo hace lazy.
-    trabajos = db.query(models.TrabajoTecnico).order_by(models.TrabajoTecnico.fecha_ingreso.desc()).offset(skip).limit(limit).all()
-    return trabajos
-
-# Endpoint para listar clientes
-@app.get("/clientes", response_model=List[schemas.ClienteResponse])
-def listar_clientes(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    clientes = db.query(models.Cliente).offset(skip).limit(limit).all()
-    return clientes
+    return {
+        "status": "online",
+        "service": "backend-fastapi",
+        "version": "2.0.0"
+    }

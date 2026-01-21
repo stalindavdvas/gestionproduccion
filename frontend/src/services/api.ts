@@ -1,26 +1,54 @@
 import axios from 'axios';
 
-// URL del Backend Dockerizado
-const API_URL = 'http://localhost:8000';
-
 export const api = {
     // 1. Sincronización (ETL)
     syncClientes: async () => {
-        const response = await axios.post(`${API_URL}/sync/clientes`);
-        return response.data;
-    },
-    syncIngresos: async () => {
-        const response = await axios.post(`${API_URL}/sync/ingresos`);
+        const response = await axios.post('/api/sync/clientes');
         return response.data;
     },
 
-    // 2. Obtención de Datos Reales
-    getTrabajos: async () => {
-        const response = await axios.get(`${API_URL}/trabajos?limit=5000`); // Traemos 1000 para graficar
+    syncCampo: async () => {
+        const response = await axios.post('/api/sync/campo');
         return response.data;
     },
-    getClientes: async () => {
-        const response = await axios.get(`${API_URL}/clientes?limit=5000`);
+
+    syncIngresos: async () => {
+        const response = await axios.post('/api/sync/ingresos');
         return response.data;
-    }
+    },
+
+    // 2. Obtención de Datos Reales (Tablas)
+    getTrabajos: async () => {
+        const response = await axios.get('/api/trabajos?limit=5000');
+        return response.data;
+    },
+
+    getClientes: async () => {
+        const response = await axios.get('/api/clientes?limit=5000');
+        return response.data;
+    },
+
+    // 3. NUEVO: Analítica y Gráficos (Dashboard)
+    getAnalytics: async (startDate?: string, endDate?: string) => {
+        const params = new URLSearchParams();
+        if (startDate) params.append('start_date', startDate);
+        if (endDate) params.append('end_date', endDate);
+
+        const response = await axios.get(`/api/analytics/dashboard?${params.toString()}`);
+        return response.data;
+    },
+
+    // 4. NUEVO: Insight con IA (Gemini)
+    getAnalyticsInsight: async (startDate?: string, endDate?: string) => {
+        const params = new URLSearchParams();
+        if (startDate) params.append('start_date', startDate);
+        if (endDate) params.append('end_date', endDate);
+
+        const response = await axios.get(`/api/analytics/insight?${params.toString()}`);
+        return response.data;
+    },
+getCampo: async () => {
+        const response = await axios.get('/api/campo?limit=1000');
+        return response.data;
+    },
 };
